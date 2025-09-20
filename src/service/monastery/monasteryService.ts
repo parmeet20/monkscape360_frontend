@@ -3,8 +3,7 @@ import { createAuthHeaders } from "@/utils/addAuthHeaders";
 import { baseUrl } from "@/utils/axiosUtils";
 
 export const getMonasteries = async (): Promise<Monastery[]> => {
-    const res = await baseUrl.get<Monastery[]>('/api/v1/monastery');
-    // @ts-ignore
+    const res = await baseUrl.get('/api/v1/monastery');
     return res.data.monasteries;
 };
 

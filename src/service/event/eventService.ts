@@ -3,8 +3,7 @@ import { createAuthHeaders } from "@/utils/addAuthHeaders";
 import { baseUrl } from "@/utils/axiosUtils";
 
 export const getEvents = async (): Promise<Event[]> => {
-    const res = await baseUrl.get<Event[]>('/api/v1/event');
-    // @ts-ignore
+    const res = await baseUrl.get('/api/v1/event');
     return res.data.events;
 };
 

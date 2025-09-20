@@ -12,7 +12,7 @@ export async function askGemini(prompt: string) {
             contents: prompt,
         });
         return response.text || 'No response';
-    } catch (error: any) {
+    } catch (error) {
         console.error('askGemini error:', error);
         throw new Error('Failed to fetch from Gemini API');
     }

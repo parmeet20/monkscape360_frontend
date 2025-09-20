@@ -7,10 +7,12 @@ import { Loader2 } from "lucide-react";
 import { PostCard } from "@/components/manual/card/PostCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuthStore } from "@/store/userStore";
 
 const AllPostPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const { token } = useAuthStore();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -40,7 +42,7 @@ const AllPostPage = () => {
         All Posts
       </h1>
 
-      <Button><Link href={'/post/create'}>Create Post</Link></Button>
+      {token! ? <Button><Link href={'/post/create'}>Create Post</Link></Button> : null}
 
       {posts.length === 0 ? (
         <p className="text-center text-gray-500">No posts available.</p>

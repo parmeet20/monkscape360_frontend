@@ -221,6 +221,7 @@ export default function VirtualTourNavbar() {
                     <div className="navbar-logo">
                         <Link
                             href="/"
+                            onClick={() => setIsMobileMenuOpen(false)}
                             className="text-2xl bg-gradient-to-r from-orange-400 to-orange-500 font-extrabold bg-clip-text text-transparent hover:scale-105 transition-all duration-300"
                         >
                             MonkScape360
@@ -307,7 +308,9 @@ export default function VirtualTourNavbar() {
                             <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                         ) : !user ? (
                             <Button className="rounded-full">
-                                <Link href={"/login"}>Login</Link>
+                                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                    Login
+                                </Link>
                             </Button>
                         ) : (
                             <DropdownMenu>
@@ -337,6 +340,7 @@ export default function VirtualTourNavbar() {
                     <MobileNavHeader>
                         <Link
                             href="/"
+                            onClick={() => setIsMobileMenuOpen(false)}
                             className="text-2xl bg-gradient-to-r from-orange-400 to-orange-500 font-extrabold bg-clip-text text-transparent hover:scale-105 transition-all duration-300"
                         >
                             MonkScape360
@@ -452,7 +456,12 @@ export default function VirtualTourNavbar() {
                                 </div>
                             ) : !user ? (
                                 <Button className="rounded-full">
-                                    <Link href={"/login"}>Login</Link>
+                                    <Link
+                                        href="/login"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        Login
+                                    </Link>
                                 </Button>
                             ) : (
                                 <DropdownMenu>

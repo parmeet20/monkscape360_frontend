@@ -23,9 +23,9 @@ const EventDetailPage = () => {
       try {
         const data = await getEventById(id as string);
         setEvent(data);
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load event details", {
-          description: error?.response?.data?.message || "Something went wrong",
+          description: "Something went wrong",
         });
       } finally {
         setLoading(false);

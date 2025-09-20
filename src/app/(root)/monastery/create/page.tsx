@@ -86,10 +86,9 @@ export default function CreateMonasteryPage() {
 
             router.push(`/monastery/${res!.id}`);
             form.reset();
-        } catch (error: any) {
+        } catch (error) {
             toast.error("Error", {
-                description:
-                    error?.response?.data?.message || "Failed to create monastery",
+                description: "Failed to create monastery",
             });
         }
     };

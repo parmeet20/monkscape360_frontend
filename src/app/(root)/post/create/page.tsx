@@ -47,8 +47,8 @@ const CreatePostPage = () => {
             await createPost(data, cleanToken);
             toast.success("Post created successfully!");
             router.push(`/post`);
-        } catch (error: any) {
-            toast.error(error.message || "Something went wrong");
+        } catch (error) {
+            toast.error("Something went wrong");
         }
     }
 

@@ -67,7 +67,7 @@ export default function MyForm() {
     const router = useRouter();
     const cleanToken = token!.replace(/^"(.*)"$/, "$1");
 
-    const form = useForm<FormData, any, FormData>({
+    const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             monasteryId: id,

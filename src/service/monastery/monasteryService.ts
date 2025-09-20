@@ -10,7 +10,6 @@ export const getMonasteries = async (): Promise<Monastery[]> => {
 
 export const getMonasteryById = async (id: string): Promise<Monastery> => {
     const res = await baseUrl.get(`/api/v1/monastery/${id}`);
-    // @ts-ignore
     return res.data.monastery;
 };
 

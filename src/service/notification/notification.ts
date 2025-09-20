@@ -3,8 +3,7 @@ import { createAuthHeaders } from "@/utils/addAuthHeaders";
 import { baseUrl } from "@/utils/axiosUtils";
 
 export const getNotifications = async (token: string): Promise<Notification[]> => {
-    const res = await baseUrl.get<Notification[]>('/api/v1/notification', createAuthHeaders(token));
-    // @ts-ignore
+    const res = await baseUrl.get('/api/v1/notification', createAuthHeaders(token));
     return res.data.notifications;
 };
 

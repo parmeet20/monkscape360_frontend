@@ -115,7 +115,7 @@ export default function MyForm() {
         value: string
     ) => {
         const currentDate = form.getValues(fieldName) || new Date()
-        let newDate = new Date(currentDate)
+        const newDate = new Date(currentDate)
 
         if (type === "hour") {
             const hour = parseInt(value, 10)

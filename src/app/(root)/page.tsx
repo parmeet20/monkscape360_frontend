@@ -210,8 +210,9 @@ export default function Home() {
             }`}
         >
           <h2 className="text-4xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-orange-300">
-            Join Us in Preserving Sikkim’s Heritage
+            Join Us in Preserving Sikkim&apos;s Heritage
           </h2>
+
           <p className="mb-8 text-gray-800 dark:text-gray-300 text-lg">
             Be part of a community dedicated to celebrating and protecting the unique culture of Sikkim.
           </p>

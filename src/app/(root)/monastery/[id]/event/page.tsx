@@ -134,8 +134,8 @@ export default function MyForm() {
             const res = await createEvent(eventData, cleanToken);
             toast.success("Event created successfully!");
             router.push(`/event/${res.id}`);
-        } catch (error: any) {
-            toast.error(error.message || "Failed to create event");
+        } catch (error) {
+            toast.error("Failed to create event");
             console.error(error);
         }
     }

@@ -25,7 +25,7 @@ import { createPost } from "@/service/post/postService";
 const formSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
-    imageUrl: z.any().optional(),
+    imageUrl: z.union([z.instanceof(File), z.string()]).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -76,7 +76,7 @@ const CreatePostPage = () => {
             } else {
                 throw new Error("Image upload failed");
             }
-        } catch (error) {
+        } catch {
             throw new Error("Failed to upload image to Cloudinary");
         } finally {
             setUploading(false);
@@ -85,22 +85,24 @@ const CreatePostPage = () => {
 
     async function onSubmit(data: FormData) {
         try {
-            const postData: FormData = {
+            let postData: { title: string; description: string; imageUrl?: string } = {
                 title: data.title,
                 description: data.description,
             };
 
-            const imageFile = data.imageUrl as unknown as File;
+            const imageFile = data.imageUrl;
             if (imageFile instanceof File) {
                 const imageUrl = await uploadToCloudinary(imageFile);
                 postData.imageUrl = imageUrl;
+            } else if (typeof imageFile === "string") {
+                postData.imageUrl = imageFile;
             }
 
             await createPost(postData, cleanToken);
             toast.success("Post created successfully!");
             router.push(`/post`);
-        } catch (error: any) {
-            toast.error(error.message || "Something went wrong");
+        } catch {
+            toast.error("Something went wrong");
         } finally {
             // Cleanup preview URL
             if (previewImage) {

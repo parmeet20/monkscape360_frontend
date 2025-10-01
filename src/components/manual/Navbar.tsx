@@ -130,9 +130,9 @@ export default function VirtualTourNavbar() {
         const fetchedUser = await getUserFromToken(storedToken);
         setUser(fetchedUser);
         console.log("[Navbar] User fetched successfully:", fetchedUser);
-      } catch (err: any) {
+      } catch (err) {
         console.error("[Navbar] Failed to fetch user from token:", err);
-        if (err.response?.status === 401) {
+        if (err) {
           console.log("[Navbar] Invalid token, clearing session");
           localStorage.removeItem("token");
           logout();
@@ -167,7 +167,7 @@ export default function VirtualTourNavbar() {
     { name: "Home", link: "/" },
     { name: "Monastery", link: "/monastery" },
     { name: "Events", link: "/event" },
-    { name: "Posts", link: "/post" },
+    { name: "Communities", link: "/post" },
   ];
 
   return (

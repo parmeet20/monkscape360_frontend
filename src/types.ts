@@ -57,6 +57,7 @@ export interface Event {
     monasteryId: string;
     name: string;
     description?: string;
+    imageUrl?: string;
     startDate?: string;
     endDate?: string;
     recurring: boolean;
@@ -69,6 +70,8 @@ export interface Post {
     id: string;
     title: string;
     description: string;
+    imageUrl?: string;
     userId: string;
+    views: number;
     createdAt: string;
 }

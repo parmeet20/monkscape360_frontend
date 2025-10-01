@@ -13,26 +13,33 @@ import { deletePost } from "@/service/post/postService";
 import { useAuthStore } from "@/store/userStore";
 import { Post } from "@/types";
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 interface PostCardProps {
   post: Post;
-  onDelete?: () => void; // <- Add this
+  onDelete?: () => void;
+  canDelete?: boolean;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onDelete }) => {
-  const { user, token } = useAuthStore();
+export const PostCard: React.FC<PostCardProps> = ({ post, onDelete, canDelete }) => {
+  const { token } = useAuthStore();
 
   const deletePostHandler = async () => {
-    try {
-      const cleanToken = token!.replace(/^"(.*)"$/, "$1");
-      await deletePost(post.id, cleanToken!);
-      toast.success("Post deleted successfully");
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
 
-      // Notify parent to remove this post
-      onDelete?.(); // Safe call if provided
+    try {
+      const cleanToken = token.replace(/^"(.*)"$/, "$1");
+
+      // Delete the post from the database
+      await deletePost(post.id, cleanToken);
+      toast.success("Post deleted successfully");
+      onDelete?.();
     } catch (error) {
-      console.log(error);
+      console.error("Error deleting post:", error);
       toast.error("Post not deleted");
     }
   };
@@ -53,16 +60,29 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDelete }) => {
       </CardHeader>
 
       <CardContent>
+        {post.imageUrl && (
+          <img
+            src={post.imageUrl}
+            alt={`Image for ${post.title}`}
+            className="w-full h-48 object-cover rounded-md mb-4"
+            onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
+          />
+        )}
         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
           {post.description}
         </p>
       </CardContent>
 
       <CardFooter className="flex justify-between items-center">
-        <span className="text-xs text-muted-foreground">By User: {post.userId}</span>
-        {(user?.role === "admin" || user?.id === post.userId) && (
+        <div className="flex items-center gap-4">
+          <Button variant="outline">
+            <Link href={`/post/${post.id}`}>Details</Link>
+          </Button>
+          <span className="text-xs text-muted-foreground">By User: {post.userId}</span>
+        </div>
+        {canDelete && (
           <div className="flex items-center">
-            <Button onClick={deletePostHandler} variant={"destructive"}>
+            <Button onClick={deletePostHandler} variant="destructive">
               <Trash2 className="mr-1 h-4 w-4" />
               Delete
             </Button>

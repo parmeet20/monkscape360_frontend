@@ -53,6 +53,14 @@ const EventDetailPage = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-semibold">{event.name}</CardTitle>
         </CardHeader>
+        {event.imageUrl && (
+          <img
+            src={event.imageUrl}
+            alt={`Image for ${event.name}`}
+            className="w-full h-full object-cover rounded-md"
+            onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
+          />
+        )}
 
         <CardContent className="space-y-4">
           {event.description && (

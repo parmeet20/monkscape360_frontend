@@ -12,6 +12,10 @@ export const getPostById = async (id: string): Promise<Post> => {
     return res.data.post;
 };
 
+export const increaseViewOfPost = async(id: string)=>{
+    await baseUrl.put(`/api/v1/post/view/${id}`);
+}
+
 export const createPost = async (post: Partial<Post>, token: string): Promise<Post> => {
     const res = await baseUrl.post('/api/v1/post/create', post, createAuthHeaders(token));
     return res.data;

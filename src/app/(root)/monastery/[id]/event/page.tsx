@@ -1,14 +1,15 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { toast } from "sonner"
-
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { toast } from "sonner";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {config} from '@/lib/config';
 import {
     Form,
     FormControl,
@@ -17,23 +18,23 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from "@/components/ui/popover"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Switch } from "@/components/ui/switch"
-import { CalendarCheckIcon } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
-import { createEvent } from "@/service/event/eventService"
-import { useAuthStore } from "@/store/userStore"
-import { Event } from "@/types"
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { CalendarCheckIcon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { createEvent } from "@/service/event/eventService";
+import { useAuthStore } from "@/store/userStore";
+import { Event } from "@/types";
 
-// ✅ Validation schema
+// Validation schema
 const formSchema = z
     .object({
         monasteryId: z.string().min(5),
@@ -44,7 +45,8 @@ const formSchema = z
         }),
         endDate: z.date(),
         recurring: z.boolean(),
-        status: z.enum(["pending", "confirmed", "cancelled"]),  // <-- changed here
+        status: z.enum(["pending", "confirmed", "cancelled"]),
+        imageUrl: z.any().optional(), // For file input
     })
     .superRefine((data, ctx) => {
         if (data.endDate <= data.startDate) {
@@ -56,16 +58,14 @@ const formSchema = z
         }
     });
 
-
-
 type FormData = z.infer<typeof formSchema>;
 
 export default function MyForm() {
-
     const { id } = useParams<{ id: string }>();
     const { token } = useAuthStore();
     const router = useRouter();
-    const cleanToken = token!.replace(/^"(.*)"$/, "$1");
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
 
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -76,74 +76,111 @@ export default function MyForm() {
             startDate: new Date(),
             endDate: new Date(),
             recurring: false,
-            status: "confirmed"
+            status: "confirmed",
+            imageUrl: undefined,
         },
     });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
-        // Convert Date objects to ISO strings, and include the rest of the values as is
-        const newValues: Partial<Event> = {
-            ...values,
-            startDate: values.startDate.toISOString(),
-            endDate: values.endDate.toISOString(),
-            monasteryId: id!,  // ensure monasteryId from URL params
-        };
+    async function uploadToCloudinary(file: File): Promise<string> {
+        if (!file.type.startsWith("image/")) {
+            throw new Error("Please upload a valid image file");
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            throw new Error("Image size must be less than 10MB");
+        }
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "estateWebsite");
+        formData.append("cloud_name", config.NEXT_PUBLIC_CLOUD_NAME);
 
         try {
-            const res = await createEvent(newValues, cleanToken);
+            const response = await fetch(
+                "https://api.cloudinary.com/v1_1/dttieo9rb/image/upload",
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+            const data = await response.json();
+            if (data.secure_url) {
+                return data.secure_url;
+            } else {
+                throw new Error("Image upload failed");
+            }
+        } catch (error) {
+            throw new Error("Failed to upload image to Cloudinary");
+        } finally {
+            setUploading(false);
+        }
+    }
+
+    async function onSubmit(values: FormData) {
+        try {
+            const eventData: Partial<Event> = {
+                ...values,
+                startDate: values.startDate.toISOString(),
+                endDate: values.endDate.toISOString(),
+                monasteryId: id!,
+            };
+
+            const imageFile = values.imageUrl as unknown as File;
+            if (imageFile instanceof File) {
+                const imageUrl = await uploadToCloudinary(imageFile);
+                eventData.imageUrl = imageUrl;
+            }
+
+            const res = await createEvent(eventData, cleanToken);
             toast.success("Event created successfully!");
             router.push(`/event/${res.id}`);
-            // maybe reset the form or navigate somewhere
-        } catch (error) {
-            toast.error("Failed to create event.");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to create event");
             console.error(error);
         }
     }
 
-
     const handleDateSelect = (fieldName: "startDate" | "endDate", date: Date | undefined) => {
         if (date) {
-            form.setValue(fieldName, date)
+            form.setValue(fieldName, date);
         }
-    }
-
-    if (!token) <>Unauthorized</>
+    };
 
     const handleTimeChange = (
         fieldName: "startDate" | "endDate",
         type: "hour" | "minute" | "ampm",
         value: string
     ) => {
-        const currentDate = form.getValues(fieldName) || new Date()
-        const newDate = new Date(currentDate)
+        const currentDate = form.getValues(fieldName) || new Date();
+        const newDate = new Date(currentDate);
 
         if (type === "hour") {
-            const hour = parseInt(value, 10)
-            const isPM = currentDate.getHours() >= 12
-            newDate.setHours(isPM ? (hour === 12 ? 12 : hour + 12) : hour % 12)
+            const hour = parseInt(value, 10);
+            const isPM = currentDate.getHours() >= 12;
+            newDate.setHours(isPM ? (hour === 12 ? 12 : hour + 12) : hour % 12);
         } else if (type === "minute") {
-            newDate.setMinutes(parseInt(value, 10))
+            newDate.setMinutes(parseInt(value, 10));
         } else if (type === "ampm") {
-            const hours = newDate.getHours()
+            const hours = newDate.getHours();
             if (value === "AM" && hours >= 12) {
-                newDate.setHours(hours - 12)
+                newDate.setHours(hours - 12);
             } else if (value === "PM" && hours < 12) {
-                newDate.setHours(hours + 12)
+                newDate.setHours(hours + 12);
             }
         }
 
-        form.setValue(fieldName, newDate)
-    }
+        form.setValue(fieldName, newDate);
+    };
 
-    // ✅ Custom date-time picker (reusable)
+    // Custom date-time picker (reusable)
     const DateTimePicker = ({
         fieldName,
         label,
         description,
     }: {
-        fieldName: "startDate" | "endDate"
-        label: string
-        description: string
+        fieldName: "startDate" | "endDate";
+        label: string;
+        description: string;
     }) => (
         <FormField
             control={form.control}
@@ -186,8 +223,8 @@ export default function MyForm() {
                                                     size="icon"
                                                     variant={
                                                         field.value &&
-                                                            (field.value.getHours() % 12 === hour % 12 ||
-                                                                (field.value.getHours() % 12 === 0 && hour === 12))
+                                                        (field.value.getHours() % 12 === hour % 12 ||
+                                                            (field.value.getHours() % 12 === 0 && hour === 12))
                                                             ? "default"
                                                             : "ghost"
                                                     }
@@ -208,9 +245,7 @@ export default function MyForm() {
                                                 <Button
                                                     key={minute}
                                                     size="icon"
-                                                    variant={
-                                                        field.value?.getMinutes() === minute ? "default" : "ghost"
-                                                    }
+                                                    variant={field.value?.getMinutes() === minute ? "default" : "ghost"}
                                                     className="sm:w-full shrink-0 aspect-square"
                                                     onClick={() => handleTimeChange(fieldName, "minute", minute.toString())}
                                                 >
@@ -230,8 +265,8 @@ export default function MyForm() {
                                                     size="icon"
                                                     variant={
                                                         field.value &&
-                                                            ((ampm === "AM" && field.value.getHours() < 12) ||
-                                                                (ampm === "PM" && field.value.getHours() >= 12))
+                                                        ((ampm === "AM" && field.value.getHours() < 12) ||
+                                                            (ampm === "PM" && field.value.getHours() >= 12))
                                                             ? "default"
                                                             : "ghost"
                                                     }
@@ -252,80 +287,130 @@ export default function MyForm() {
                 </FormItem>
             )}
         />
-    )
+    );
+
+    if (!token) return <div className="text-center text-red-500">Unauthorized</div>;
+
+    const cleanToken = token.replace(/^"(.*)"$/, "$1");
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-                {/* Name */}
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Losar Festival Celebration" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+        <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+            <h1 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                Create New Event
+            </h1>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    {/* Name */}
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Losar Festival Celebration" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                {/* Description */}
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                                <Textarea
-                                    placeholder="Annual Tibetan New Year festival with traditional rituals and cultural performances."
-                                    className="resize-none"
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormDescription>Enter event description</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                    {/* Description */}
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Annual Tibetan New Year festival with traditional rituals and cultural performances."
+                                        className="resize-none"
+                                        {...field}
+                                        rows={6}
+                                    />
+                                </FormControl>
+                                <FormDescription>Enter event description</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                {/* Start Date Picker */}
-                <DateTimePicker
-                    fieldName="startDate"
-                    label="Start Date"
-                    description="Start date must be in the future."
-                />
+                    {/* Image Upload */}
+                    <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field: { onChange, value, ...rest } }) => (
+                            <FormItem>
+                                <FormLabel>Image (Optional)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                onChange(file);
+                                                setPreviewImage(URL.createObjectURL(file));
+                                            } else {
+                                                setPreviewImage(null);
+                                            }
+                                        }}
+                                        {...rest}
+                                    />
+                                </FormControl>
+                                {previewImage && (
+                                    <div className="mt-4">
+                                        <img
+                                            src={previewImage}
+                                            alt="Event image preview"
+                                            className="w-full h-48 object-cover rounded-md"
+                                            onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
+                                        />
+                                    </div>
+                                )}
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                {/* End Date Picker */}
-                <DateTimePicker
-                    fieldName="endDate"
-                    label="End Date"
-                    description="End date must be after the start date."
-                />
+                    {/* Start Date Picker */}
+                    <DateTimePicker
+                        fieldName="startDate"
+                        label="Start Date"
+                        description="Start date must be in the future."
+                    />
 
-                {/* Recurring */}
-                <FormField
-                    control={form.control}
-                    name="recurring"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <FormLabel>Recurring</FormLabel>
-                                <FormDescription>Enable if this is a recurring event</FormDescription>
-                            </div>
-                            <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
+                    {/* End Date Picker */}
+                    <DateTimePicker
+                        fieldName="endDate"
+                        label="End Date"
+                        description="End date must be after the start date."
+                    />
 
-                {/* Submit */}
-                <Button type="submit">Submit</Button>
-            </form>
-        </Form>
-    )
+                    {/* Recurring */}
+                    <FormField
+                        control={form.control}
+                        name="recurring"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Recurring</FormLabel>
+                                    <FormDescription>Enable if this is a recurring event</FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Submit */}
+                    <Button type="submit" className="w-full" disabled={uploading}>
+                        {uploading ? "Uploading..." : "Create Event"}
+                    </Button>
+                </form>
+            </Form>
+        </div>
+    );
 }

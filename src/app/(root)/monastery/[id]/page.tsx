@@ -6,13 +6,13 @@ import { getMonasteryById } from "@/service/monastery/monasteryService";
 import { Monastery } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { Loader2, Volume2, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/userStore";
 import Link from "next/link";
 import { Lens } from "@/components/ui/lens";
+import { askGemini } from "@/utils/gemini";
 
-// Dynamically import LeafletMap (to avoid SSR issues)
 const LeafletMap = dynamic(() => import("@/components/ui/LeafletMap"), {
   ssr: false,
 });
@@ -23,6 +23,12 @@ const MonasteryDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [hovering, setHovering] = useState(false);
   const { user } = useAuthStore();
+
+  // audio states
+  const [speaking, setSpeaking] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [story, setStory] = useState("");
+  const [utterance, setUtterance] = useState<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +44,54 @@ const MonasteryDetailPage = () => {
     };
     fetchData();
   }, [id]);
+
+  const handlePlayStory = async () => {
+    if (!monastery) return;
+
+    setSpeaking(true);
+    setPaused(false);
+
+    try {
+      const prompt = `
+      Tell me the history of this monastery as an engaging story with proper formatting, bold important words, and in a way a tourist guide would narrate it:
+
+      Name: ${monastery.name}
+      Established Year: ${monastery.establishedYear}
+      Address: ${monastery.address}
+      Description: ${monastery.description}
+      `;
+
+      const response = await askGemini(prompt);
+      setStory(response);
+
+      // Use browser Text-to-Speech
+      const newUtterance = new SpeechSynthesisUtterance(response);
+      newUtterance.lang = "en-US";
+      newUtterance.onend = () => {
+        setSpeaking(false);
+        setPaused(false);
+        setUtterance(null);
+      };
+      setUtterance(newUtterance);
+      window.speechSynthesis.speak(newUtterance);
+    } catch (error) {
+      console.error("Error generating story:", error);
+      setSpeaking(false);
+      setPaused(false);
+    }
+  };
+
+  const handlePauseResume = () => {
+    if (!utterance) return;
+
+    if (paused) {
+      window.speechSynthesis.resume();
+      setPaused(false);
+    } else {
+      window.speechSynthesis.pause();
+      setPaused(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -67,13 +121,11 @@ const MonasteryDetailPage = () => {
                 <img
                   src={monastery.mainImageUrl}
                   alt={monastery.name}
-                  className="rounded-2xl object-cover w-full h-80"
+                  className="rounded-2xl object-cover w-full h-[400px]"
                 />
               </Lens>
             </div>
 
-
-            {/* Info */}
             <p className="text-lg text-muted-foreground">
               {monastery.description}
             </p>
@@ -83,7 +135,40 @@ const MonasteryDetailPage = () => {
             <p>
               <strong>Address:</strong> {monastery.address}
             </p>
-            {user?.role === "admin" ? <Button><Link href={`/monastery/${monastery.id}/event`}>Create Event</Link></Button> : null}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handlePlayStory}
+                disabled={story.length > 0}
+                className="flex items-center gap-2"
+              >
+                <Volume2 className="w-4 h-4" />
+                {speaking && !paused ? "Playing..." : "Listen to History"}
+              </Button>
+              {speaking && (
+                <Button
+                  onClick={handlePauseResume}
+                  className="flex items-center gap-2"
+                >
+                  {paused ? (
+                    <>
+                      <Play className="w-4 h-4" /> Resume
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-4 h-4" /> Pause
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {user?.role === "admin" ? (
+              <Button>
+                <Link href={`/monastery/${monastery.id}/event`}>Create Event</Link>
+              </Button>
+            ) : null}
+
             {/* Map */}
             <div className="h-96">
               <LeafletMap
@@ -92,6 +177,12 @@ const MonasteryDetailPage = () => {
                 name={monastery.name}
               />
             </div>
+            {story && (
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h2 className="text-lg font-semibold mb-2">Story:</h2>
+                <p className="whitespace-pre-line">{story}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

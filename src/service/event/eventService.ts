@@ -16,3 +16,7 @@ export const createEvent = async (event: Partial<Event>, token: string): Promise
     const res = await baseUrl.post('/api/v1/event/create', event, createAuthHeaders(token));
     return res.data.event;
 };
+
+export const deleteEvent = async (id: string, token: string)=> {
+    await baseUrl.delete(`/api/v1/event/${id}`, createAuthHeaders(token));
+};

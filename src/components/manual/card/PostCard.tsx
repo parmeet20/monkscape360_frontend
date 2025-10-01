@@ -78,7 +78,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDelete, canDelete })
           <Button variant="outline">
             <Link href={`/post/${post.id}`}>Details</Link>
           </Button>
-          <span className="text-xs text-muted-foreground">By User: {post.userId}</span>
         </div>
         {canDelete && (
           <div className="flex items-center">

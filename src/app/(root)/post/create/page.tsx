@@ -85,7 +85,7 @@ const CreatePostPage = () => {
 
     async function onSubmit(data: FormData) {
         try {
-            let postData: { title: string; description: string; imageUrl?: string } = {
+            const postData: { title: string; description: string; imageUrl?: string } = {
                 title: data.title,
                 description: data.description,
             };

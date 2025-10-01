@@ -89,7 +89,7 @@ const AllPostPage = () => {
 
           <TabsContent value="my-posts">
             {myPosts.length === 0 ? (
-              <p className="text-center text-gray-500">You haven't created any posts yet.</p>
+              <p className="text-center text-gray-500">You haven&lsquo;t created any posts yet.</p>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {myPosts.map((post) => (

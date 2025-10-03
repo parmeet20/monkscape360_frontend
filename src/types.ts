@@ -57,6 +57,9 @@ export interface Event {
     monasteryId: string;
     name: string;
     description?: string;
+    seats: number;
+    reserved: number;
+    ticketPrice: number;
     imageUrl?: string;
     startDate?: string;
     endDate?: string;

@@ -23,6 +23,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@tabler/icons-react": "^3.35.0",
     "@types/leaflet": "^1.9.20",
+    "@types/three": "^0.180.0",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -42,6 +43,7 @@
     "react-leaflet": "^5.0.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
+    "three": "^0.180.0",
     "zod": "^4.1.9",
     "zustand": "^5.0.8"
   },

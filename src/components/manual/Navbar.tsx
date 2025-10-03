@@ -204,7 +204,6 @@ export default function VirtualTourNavbar() {
                     <button
                       aria-label="Open notifications"
                       className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-white dark:focus:ring-offset-slate-950"
-                      onClick={() => console.log("[Navbar] Opening notification sheet")}
                     >
                       <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
                       {notifications.length > 0 && (
@@ -223,7 +222,6 @@ export default function VirtualTourNavbar() {
                           <button
                             aria-label="Close notifications"
                             className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors focus:outline-none"
-                            onClick={() => console.log("[Navbar] Closing notification sheet")}
                           >
                             <X className="w-5 h-5" />
                           </button>
@@ -341,7 +339,6 @@ export default function VirtualTourNavbar() {
                         <button
                           aria-label="Open notifications"
                           className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 focus:ring-offset-white dark:focus:ring-offset-slate-950"
-                          onClick={() => console.log("[Navbar] Opening mobile notification sheet")}
                         >
                           <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
                           {notifications.length > 0 && (
@@ -364,7 +361,7 @@ export default function VirtualTourNavbar() {
                             <button
                               aria-label="Close notifications"
                               className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors focus:outline-none"
-                              onClick={() => console.log("[Navbar] Closing mobile notification sheet")}
+                              onClick={() => ("[Navbar] Closing mobile notification sheet")}
                             >
                               <X className="w-5 h-5" />
                             </button>

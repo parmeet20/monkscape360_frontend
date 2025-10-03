@@ -9,7 +9,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {config} from '@/lib/config';
+import { config } from '@/lib/config';
 import {
     Form,
     FormControl,
@@ -47,6 +47,8 @@ const formSchema = z
         recurring: z.boolean(),
         status: z.enum(["pending", "confirmed", "cancelled"]),
         imageUrl: z.any().optional(), // For file input
+        seats: z.number().min(1, "At least one seat is required").int(),
+        ticketPrice: z.number().min(0, "Ticket price cannot be negative"),
     })
     .superRefine((data, ctx) => {
         if (data.endDate <= data.startDate) {
@@ -78,6 +80,8 @@ export default function MyForm() {
             recurring: false,
             status: "confirmed",
             imageUrl: undefined,
+            seats: 1,
+            ticketPrice: 0,
         },
     });
 
@@ -223,8 +227,8 @@ export default function MyForm() {
                                                     size="icon"
                                                     variant={
                                                         field.value &&
-                                                        (field.value.getHours() % 12 === hour % 12 ||
-                                                            (field.value.getHours() % 12 === 0 && hour === 12))
+                                                            (field.value.getHours() % 12 === hour % 12 ||
+                                                                (field.value.getHours() % 12 === 0 && hour === 12))
                                                             ? "default"
                                                             : "ghost"
                                                     }
@@ -265,8 +269,8 @@ export default function MyForm() {
                                                     size="icon"
                                                     variant={
                                                         field.value &&
-                                                        ((ampm === "AM" && field.value.getHours() < 12) ||
-                                                            (ampm === "PM" && field.value.getHours() >= 12))
+                                                            ((ampm === "AM" && field.value.getHours() < 12) ||
+                                                                (ampm === "PM" && field.value.getHours() >= 12))
                                                             ? "default"
                                                             : "ghost"
                                                     }
@@ -386,6 +390,49 @@ export default function MyForm() {
                         fieldName="endDate"
                         label="End Date"
                         description="End date must be after the start date."
+                    />
+
+                    {/* Seats */}
+                    <FormField
+                        control={form.control}
+                        name="seats"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Number of Seats</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        placeholder="50"
+                                        {...field}
+                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                    />
+                                </FormControl>
+                                <FormDescription>Enter the total number of available seats</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Ticket Price */}
+                    <FormField
+                        control={form.control}
+                        name="ticketPrice"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Ticket Price ($)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="25.00"
+                                        {...field}
+                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                    />
+                                </FormControl>
+                                <FormDescription>Enter the ticket price in dollars (0 for free events)</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
 
                     {/* Recurring */}

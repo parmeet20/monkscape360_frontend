@@ -15,18 +15,18 @@ const EventPage = () => {
   const router = useRouter();
   const { user } = useAuthStore();
 
+  const fetchEvents = async () => {
+    try {
+      const data = await getEvents();
+      setEvents(data);
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+      toast.error("Failed to load events");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const data = await getEvents();
-        setEvents(data);
-      } catch (err) {
-        console.error("Failed to fetch events:", err);
-        toast.error("Failed to load events");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchEvents();
   }, []);
 
@@ -57,6 +57,7 @@ const EventPage = () => {
             key={event.id}
             event={event}
             canDelete={user?.role === "admin"}
+            onBook={() => fetchEvents()}
             onView={(id) => router.push(`/event/${id}`)}
             onDelete={() => setEvents((prev) => prev.filter((e) => e.id !== event.id))}
           />
